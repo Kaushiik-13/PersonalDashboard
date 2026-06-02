@@ -1,7 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
+import { fetchGitHubSignals } from "@/lib/github";
 
 export type Signal = {
   id: string;
+  external_id?: string;
+  provider?: string;
   title: string;
   source: string;
   category: "GitHub" | "AI Tools" | "Models" | "Design" | "Dev Tools";
@@ -26,7 +29,7 @@ export const supabase = hasSupabaseConfig
 
 export async function getSignals() {
   if (!supabase) {
-    return mockSignals;
+    return getFallbackSignals();
   }
 
   const { data, error } = await supabase
@@ -37,15 +40,31 @@ export async function getSignals() {
 
   if (error) {
     console.error("Unable to read signals from Supabase", error);
-    return mockSignals;
+    return getFallbackSignals();
+  }
+
+  if (!data?.length) {
+    return getFallbackSignals();
   }
 
   return data as Signal[];
 }
 
+async function getFallbackSignals() {
+  try {
+    const result = await fetchGitHubSignals(6);
+    return result.signals;
+  } catch (error) {
+    console.error("Unable to fetch GitHub fallback signals", error);
+    return mockSignals;
+  }
+}
+
 export const mockSignals: Signal[] = [
   {
     id: "1",
+    external_id: "mock-1",
+    provider: "mock",
     title: "Claude Code workflow monitor",
     source: "GitHub Trending",
     category: "AI Tools",
@@ -62,6 +81,8 @@ export const mockSignals: Signal[] = [
   },
   {
     id: "2",
+    external_id: "mock-2",
+    provider: "mock",
     title: "LLM Council for code review routing",
     source: "Hacker News",
     category: "Dev Tools",
@@ -78,6 +99,8 @@ export const mockSignals: Signal[] = [
   },
   {
     id: "3",
+    external_id: "mock-3",
+    provider: "mock",
     title: "Open source model optimized for local coding",
     source: "Hugging Face",
     category: "Models",
@@ -94,6 +117,8 @@ export const mockSignals: Signal[] = [
   },
   {
     id: "4",
+    external_id: "mock-4",
+    provider: "mock",
     title: "Design system primitives for dense SaaS dashboards",
     source: "GitHub Search",
     category: "Design",
