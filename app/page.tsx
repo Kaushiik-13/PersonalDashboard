@@ -1,18 +1,21 @@
 import {
-  Activity,
   Bell,
   Bookmark,
   Boxes,
   Brain,
+  CalendarDays,
+  CheckCircle2,
   Code2,
   ExternalLink,
   Github,
   LayoutDashboard,
   Library,
+  Newspaper,
   RefreshCw,
   Search,
   Sparkles,
   Star,
+  Wallet,
 } from "lucide-react";
 import { dashboardSources, watchKeywords } from "@/lib/sources";
 import { getSignals, hasSupabaseConfig } from "@/lib/supabase";
@@ -20,12 +23,58 @@ import { getSignals, hasSupabaseConfig } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
 
 const navItems = [
-  { label: "Today", count: 24, icon: LayoutDashboard, active: true },
-  { label: "GitHub", count: 9, icon: Github },
+  { label: "Dashboard", count: 8, icon: LayoutDashboard, active: true },
+  { label: "Dev Signals", count: 9, icon: Github },
   { label: "AI Tools", count: 7, icon: Brain },
-  { label: "Models", count: 4, icon: Boxes },
-  { label: "Design", count: 3, icon: Library },
+  { label: "Calendar", count: 3, icon: CalendarDays },
+  { label: "Tasks", count: 5, icon: CheckCircle2 },
+  { label: "Notes", count: 4, icon: Library },
   { label: "Saved", count: 12, icon: Bookmark },
+];
+
+const quickModules = [
+  {
+    title: "Dev Signals",
+    eyebrow: "Trending repos and AI tooling",
+    value: "4 new",
+    note: "Open the tab for details",
+    icon: Github,
+  },
+  {
+    title: "Tasks",
+    eyebrow: "Personal priorities",
+    value: "5 open",
+    note: "2 planned for today",
+    icon: CheckCircle2,
+  },
+  {
+    title: "Calendar",
+    eyebrow: "Meetings and reminders",
+    value: "3 events",
+    note: "Next block this afternoon",
+    icon: CalendarDays,
+  },
+  {
+    title: "Finance",
+    eyebrow: "Spending and watchlist",
+    value: "Quiet",
+    note: "No urgent alerts",
+    icon: Wallet,
+  },
+  {
+    title: "Reading",
+    eyebrow: "Articles and saved links",
+    value: "6 saved",
+    note: "Development and design queue",
+    icon: Newspaper,
+  },
+  {
+    title: "AI Tools",
+    eyebrow: "Claude, Codex, models",
+    value: "2 updates",
+    note: "Filtered by watchlist",
+    icon: Sparkles,
+  },
 ];
 
 const formatNumber = (value?: number) => {
@@ -43,10 +92,9 @@ const formatTime = (date: string) =>
 
 export default async function Home() {
   const signals = await getSignals();
-  const topSignals = signals.slice(0, 4);
-  const totalGrowth = signals.reduce((sum, signal) => sum + (signal.growth ?? 0), 0);
+  const topSignals = signals.slice(0, 3);
+  const topSignal = signals[0];
   const bestScore = Math.max(...signals.map((signal) => signal.score));
-  const categories = new Set(signals.map((signal) => signal.category)).size;
 
   return (
     <main className="shell">
@@ -55,7 +103,7 @@ export default async function Home() {
           <div className="brand-mark">S</div>
           <div>
             <h1 className="brand-title">Signal Desk</h1>
-            <p className="brand-subtitle">Developer radar</p>
+            <p className="brand-subtitle">Personal dashboard</p>
           </div>
         </div>
 
@@ -78,7 +126,7 @@ export default async function Home() {
         })}
 
         <p className="nav-label">Watchlist</p>
-        {watchKeywords.slice(0, 7).map((keyword) => (
+        {watchKeywords.slice(0, 6).map((keyword) => (
           <button className="nav-item" key={keyword} type="button">
             <span className="nav-copy">
               <Search size={15} />
@@ -91,14 +139,14 @@ export default async function Home() {
       <section className="main">
         <div className="topbar">
           <div>
-            <p className="eyebrow">Tuesday, June 2 · Dark intelligence console</p>
-            <h2 className="page-title">What should I know today?</h2>
+            <p className="eyebrow">Tuesday, June 2 - Personal command center</p>
+            <h2 className="page-title">Dashboard</h2>
           </div>
           <div className="actions">
             <button aria-label="Notifications" className="icon-button" type="button">
               <Bell size={18} />
             </button>
-            <button aria-label="Refresh feed" className="icon-button" type="button">
+            <button aria-label="Refresh dashboard" className="icon-button" type="button">
               <RefreshCw size={18} />
             </button>
             <button className="primary-button" type="button">
@@ -108,86 +156,80 @@ export default async function Home() {
           </div>
         </div>
 
-        <div className="stats-grid">
-          <article className="stat">
-            <p className="stat-label">Signals tracked</p>
-            <p className="stat-value">{signals.length}</p>
-            <p className="stat-note">Repos, releases, models, papers</p>
-          </article>
-          <article className="stat">
-            <p className="stat-label">Star growth</p>
-            <p className="stat-value">+{formatNumber(totalGrowth)}</p>
-            <p className="stat-note">Across current feed</p>
-          </article>
-          <article className="stat">
-            <p className="stat-label">Best relevance</p>
-            <p className="stat-value">{bestScore}</p>
-            <p className="stat-note">Keyword and freshness score</p>
-          </article>
-          <article className="stat">
-            <p className="stat-label">Active categories</p>
-            <p className="stat-value">{categories}</p>
-            <p className="stat-note">Reddit intentionally skipped</p>
-          </article>
-        </div>
+        <section className="hero-strip">
+          <div>
+            <p className="hero-label">Quick Access</p>
+            <h3>Everything important, one glance first.</h3>
+          </div>
+          <div className="hero-score">
+            <span>{bestScore}</span>
+            <small>top signal</small>
+          </div>
+        </section>
 
-        <div className="content-grid">
-          <section className="section">
+        <section className="quick-grid">
+          {quickModules.map((module) => {
+            const Icon = module.icon;
+            return (
+              <article className="quick-card" key={module.title}>
+                <div className="quick-icon">
+                  <Icon size={18} />
+                </div>
+                <p className="quick-eyebrow">{module.eyebrow}</p>
+                <h3>{module.title}</h3>
+                <div className="quick-bottom">
+                  <strong>{module.value}</strong>
+                  <span>{module.note}</span>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+
+        <div className="overview-grid">
+          <section className="section dev-preview">
             <div className="section-header">
               <h3 className="section-title">
-                <Activity size={17} />
-                Priority Feed
+                <Code2 size={17} />
+                Dev Signals Preview
               </h3>
-              <span className="section-meta">Ranked by freshness, growth, relevance</span>
+              <span className="section-meta">Details live in its own tab</span>
             </div>
 
-            <div className="feed">
-              {signals.map((signal) => (
-                <article className="signal-card" key={signal.id}>
-                  <div>
-                    <div className="signal-top">
-                      {signal.score >= 90 ? <span className="pill hot">Hot</span> : null}
-                      <span className="pill">{signal.category}</span>
-                      <span className="pill">{signal.source}</span>
-                    </div>
-                    <a href={signal.url} rel="noreferrer" target="_blank">
-                      <h3 className="signal-title">
-                        {signal.title} <ExternalLink size={14} />
-                      </h3>
-                    </a>
-                    <p className="signal-summary">{signal.summary}</p>
-                    <p className="signal-summary">
-                      <strong>Why it matters:</strong> {signal.why_it_matters}
-                    </p>
-                    <div className="signal-footer">
-                      <span>{formatTime(signal.published_at)}</span>
-                      {signal.tags.map((tag) => (
-                        <span key={tag}>#{tag}</span>
-                      ))}
-                    </div>
+            <div className="preview-body">
+              {topSignal ? (
+                <article className="featured-signal">
+                  <div className="signal-top">
+                    <span className="pill hot">Top</span>
+                    <span className="pill">{topSignal.category}</span>
+                    <span className="pill">{topSignal.source}</span>
                   </div>
-                  <div className="metric-stack">
-                    <div className="mini-metric">
-                      <span className="mini-value">{formatNumber(signal.stars)}</span>
-                      <span className="mini-label">stars</span>
-                    </div>
-                    <div className="mini-metric">
-                      <span className="mini-value">+{formatNumber(signal.growth)}</span>
-                      <span className="mini-label">growth</span>
-                    </div>
-                    <div className="mini-metric">
-                      <span className="mini-value">{signal.score}</span>
-                      <span className="mini-label">score</span>
-                    </div>
-                    <div className="mini-metric">
-                      <span className="mini-value">
-                        <Star size={15} />
-                      </span>
-                      <span className="mini-label">save</span>
-                    </div>
+                  <a href={topSignal.url} rel="noreferrer" target="_blank">
+                    <h3 className="signal-title">
+                      {topSignal.title} <ExternalLink size={14} />
+                    </h3>
+                  </a>
+                  <p className="signal-summary">{topSignal.summary}</p>
+                  <div className="signal-footer">
+                    <span>{formatTime(topSignal.published_at)}</span>
+                    <span>{formatNumber(topSignal.stars)} stars</span>
+                    <span>score {topSignal.score}</span>
                   </div>
                 </article>
-              ))}
+              ) : null}
+
+              <div className="compact-list">
+                {topSignals.slice(1).map((signal, index) => (
+                  <a className="compact-row" href={signal.url} key={signal.id}>
+                    <span className="rank">{index + 2}</span>
+                    <span>
+                      <p className="row-title">{signal.title}</p>
+                      <p className="row-note">{signal.category}</p>
+                    </span>
+                    <span className="row-note">{signal.score}</span>
+                  </a>
+                ))}
+              </div>
             </div>
           </section>
 
@@ -195,21 +237,25 @@ export default async function Home() {
             <section className="section">
               <div className="section-header">
                 <h3 className="section-title">
-                  <Code2 size={17} />
-                  Top Watch
+                  <Star size={17} />
+                  Today Focus
                 </h3>
-                <span className="section-meta">Now</span>
+                <span className="section-meta">Quick list</span>
               </div>
               <div className="compact-list">
-                {topSignals.map((signal, index) => (
-                  <a className="compact-row" href={signal.url} key={signal.id}>
+                {[
+                  "Review dashboard modules",
+                  "Connect real source fetchers",
+                  "Create saved items view",
+                ].map((item, index) => (
+                  <div className="compact-row" key={item}>
                     <span className="rank">{index + 1}</span>
                     <span>
-                      <p className="row-title">{signal.title}</p>
-                      <p className="row-note">{signal.category}</p>
+                      <p className="row-title">{item}</p>
+                      <p className="row-note">Personal dashboard</p>
                     </span>
-                    <span className="row-note">{signal.score}</span>
-                  </a>
+                    <span className="row-note">todo</span>
+                  </div>
                 ))}
               </div>
             </section>
@@ -223,7 +269,7 @@ export default async function Home() {
                 <span className="section-meta">{dashboardSources.length}</span>
               </div>
               <div className="source-grid">
-                {dashboardSources.map((source) => (
+                {dashboardSources.slice(0, 4).map((source) => (
                   <a className="source-tile" href={source.url} key={source.name}>
                     <p className="source-name">{source.name}</p>
                     <p className="source-kind">{source.kind}</p>
@@ -239,8 +285,8 @@ export default async function Home() {
               </h3>
               <p>
                 {hasSupabaseConfig
-                  ? "Connected through environment configuration. The feed is reading from the Postgres signals table."
-                  : "Add your Supabase URL and anon key to .env.local. Until then, this screen uses curated mock signals."}
+                  ? "Connected through environment configuration. Once the table has rows, this dashboard can read real modules from Supabase."
+                  : "Add your Supabase URL and publishable key to .env.local. Until then, this screen uses curated mock data."}
               </p>
             </section>
           </aside>
