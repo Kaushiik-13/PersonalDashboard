@@ -4,6 +4,18 @@ import { hasSupabaseAdminConfig, supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "object" && error !== null) {
+    return JSON.stringify(error);
+  }
+
+  return "Unable to refresh GitHub signals";
+}
+
 export async function POST() {
   try {
     const result = await fetchGitHubSignals(20);
@@ -49,7 +61,7 @@ export async function POST() {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Unable to refresh GitHub signals",
+        error: getErrorMessage(error),
       },
       { status: 502 },
     );

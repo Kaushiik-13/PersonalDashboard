@@ -18,12 +18,10 @@ create table if not exists public.signals (
   created_at timestamptz not null default now()
 );
 
-alter table public.signals add column if not exists provider text not null default 'manual';
-alter table public.signals add column if not exists external_id text;
+drop index if exists signals_provider_external_id_idx;
 
 create unique index if not exists signals_provider_external_id_idx
-  on public.signals (provider, external_id)
-  where external_id is not null;
+  on public.signals (provider, external_id);
 
 create index if not exists signals_score_idx on public.signals (score desc);
 create index if not exists signals_published_at_idx on public.signals (published_at desc);
