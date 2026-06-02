@@ -17,6 +17,8 @@ import {
 import { dashboardSources, watchKeywords } from "@/lib/sources";
 import { getSignals, hasSupabaseConfig } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 const navItems = [
   { label: "Today", count: 24, icon: LayoutDashboard, active: true },
   { label: "GitHub", count: 9, icon: Github },

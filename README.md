@@ -23,7 +23,7 @@ Reddit is intentionally skipped in this version.
 
    ```bash
    NEXT_PUBLIC_SUPABASE_URL=
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
    ```
 
 3. Run the SQL in `supabase/schema.sql` inside your Supabase SQL editor.
