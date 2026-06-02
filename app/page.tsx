@@ -94,7 +94,18 @@ export default async function Home() {
   const signals = await getSignals();
   const topSignals = signals.slice(0, 3);
   const topSignal = signals[0];
-  const bestScore = Math.max(...signals.map((signal) => signal.score));
+  const bestScore = signals.length
+    ? Math.max(...signals.map((signal) => signal.score))
+    : 0;
+  const modules = quickModules.map((module) =>
+    module.title === "Dev Signals"
+      ? {
+          ...module,
+          value: `${signals.length} found`,
+          note: signals.length ? "Open the tab for details" : "Run the GitHub pipeline",
+        }
+      : module,
+  );
 
   return (
     <main className="shell">
@@ -168,7 +179,7 @@ export default async function Home() {
         </section>
 
         <section className="quick-grid">
-          {quickModules.map((module) => {
+          {modules.map((module) => {
             const Icon = module.icon;
             return (
               <article className="quick-card" key={module.title}>
@@ -216,7 +227,19 @@ export default async function Home() {
                     <span>score {topSignal.score}</span>
                   </div>
                 </article>
-              ) : null}
+              ) : (
+                <article className="featured-signal empty-state">
+                  <div className="signal-top">
+                    <span className="pill">GitHub</span>
+                    <span className="pill">Waiting</span>
+                  </div>
+                  <h3 className="signal-title">No dev signals loaded yet</h3>
+                  <p className="signal-summary">
+                    Run the GitHub pipeline endpoint or add rows to Supabase. Once data is
+                    available, this preview will show the highest-ranked repo signal here.
+                  </p>
+                </article>
+              )}
 
               <div className="compact-list">
                 {topSignals.slice(1).map((signal, index) => (

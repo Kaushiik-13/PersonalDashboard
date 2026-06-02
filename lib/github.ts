@@ -50,8 +50,7 @@ function daysAgo(days: number) {
 }
 
 function buildSearchQuery() {
-  const topicQuery = watchTerms.map((term) => `topic:${term}`).join(" ");
-  return `${topicQuery} pushed:>${daysAgo(21)} stars:>50 archived:false`;
+  return `pushed:>${daysAgo(21)} stars:>50 archived:false`;
 }
 
 function getCategory(repo: GitHubRepository): Signal["category"] {
@@ -118,33 +117,47 @@ function mapRepoToSignal(repo: GitHubRepository): Signal {
 }
 
 export async function fetchGitHubSignals(limit = 12): Promise<GitHubPipelineResult> {
-  const query = buildSearchQuery();
-  const params = new URLSearchParams({
-    q: query,
-    sort: "updated",
-    order: "desc",
-    per_page: String(Math.min(limit, 30)),
+  const baseQuery = buildSearchQuery();
+  const searches = watchTerms.slice(0, 8).map(async (term) => {
+    const params = new URLSearchParams({
+      q: `topic:${term} ${baseQuery}`,
+      sort: "updated",
+      order: "desc",
+      per_page: "5",
+    });
+
+    const response = await fetch(`https://api.github.com/search/repositories?${params}`, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        ...(githubToken ? { Authorization: `Bearer ${githubToken}` } : {}),
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      next: { revalidate: 900 },
+    });
+
+    if (!response.ok) {
+      throw new Error(`GitHub search failed for ${term}: ${response.status} ${response.statusText}`);
+    }
+
+    const payload = (await response.json()) as GitHubSearchResponse;
+    return payload.items;
   });
 
-  const response = await fetch(`https://api.github.com/search/repositories?${params}`, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      ...(githubToken ? { Authorization: `Bearer ${githubToken}` } : {}),
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
-    next: { revalidate: 900 },
-  });
+  const reposById = new Map<number, GitHubRepository>();
+  const searchResults = await Promise.all(searches);
 
-  if (!response.ok) {
-    throw new Error(`GitHub search failed: ${response.status} ${response.statusText}`);
+  for (const repo of searchResults.flat()) {
+    reposById.set(repo.id, repo);
   }
 
-  const payload = (await response.json()) as GitHubSearchResponse;
-  const signals = payload.items.map(mapRepoToSignal).sort((a, b) => b.score - a.score);
+  const signals = [...reposById.values()]
+    .map(mapRepoToSignal)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
 
   return {
     signals,
     fetchedAt: new Date().toISOString(),
-    query,
+    query: `${watchTerms.slice(0, 8).join(", ")} | ${baseQuery}`,
   };
 }
