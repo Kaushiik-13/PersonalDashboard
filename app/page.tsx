@@ -29,70 +29,64 @@ export default async function Home() {
       <section className="main">
         <div className="topbar">
           <div>
-            <p className="eyebrow">Personal command center</p>
-            <h2 className="page-title">Dashboard</h2>
+            <h2 className="greeting">
+              Hi Kaushiik <span className="blink-dot" />
+            </h2>
           </div>
         </div>
 
-        <section className="section dev-preview">
-          <div className="section-header">
-            <h3 className="section-title">
-              <Code2 size={17} />
+        <section className="insights-block">
+          <div className="insights-header">
+            <h3 className="insights-title">
+              <Code2 size={16} />
               GitHub Repo Insights
             </h3>
-            <span className="section-meta">
+            <span className="insights-count">
               {signals.length} signal{signals.length !== 1 ? "s" : ""} loaded
             </span>
           </div>
 
-          <div className="preview-body">
-            {topSignal ? (
-              <article className="featured-signal">
-                <div className="signal-top">
-                  <span className="pill hot">Top</span>
-                  <span className="pill">{topSignal.category}</span>
-                  <span className="pill">{topSignal.source}</span>
-                </div>
-                <a href={topSignal.url} rel="noreferrer" target="_blank">
-                  <h3 className="signal-title">
-                    {topSignal.title} <ExternalLink size={14} />
-                  </h3>
+          <div className="insights-pills">
+            <span className="insight-pill active">Top</span>
+            <span className="insight-pill">{topSignal?.category || "AI Tools"}</span>
+            <span className="insight-pill">GitHub Search</span>
+          </div>
+
+          {topSignal ? (
+            <div className="insights-body">
+              <div className="insights-featured">
+                <a href={topSignal.url} rel="noreferrer" target="_blank" className="featured-link">
+                  <h4 className="featured-title">
+                    {topSignal.title} <ExternalLink size={13} />
+                  </h4>
                 </a>
-                <p className="signal-summary">{topSignal.summary}</p>
-                <div className="signal-footer">
+                <p className="featured-summary">{topSignal.summary}</p>
+                <div className="featured-footer">
                   <span>{formatTime(topSignal.published_at)}</span>
                   <span>{formatNumber(topSignal.stars)} stars</span>
                   <span>score {topSignal.score}</span>
                 </div>
-              </article>
-            ) : (
-              <article className="featured-signal empty-state">
-                <div className="signal-top">
-                  <span className="pill">GitHub</span>
-                  <span className="pill">Waiting</span>
-                </div>
-                <h3 className="signal-title">No dev signals loaded yet</h3>
-                <p className="signal-summary">
-                  Run the GitHub pipeline endpoint or add rows to Supabase. Once
-                  data is available, this preview will show the highest-ranked
-                  repo signal here.
-                </p>
-              </article>
-            )}
+              </div>
 
-            <div className="compact-list">
-              {topSignals.slice(1).map((signal, index) => (
-                <a className="compact-row" href={signal.url} key={signal.id}>
-                  <span className="rank">{index + 2}</span>
-                  <span>
-                    <p className="row-title">{signal.title}</p>
-                    <p className="row-note">{signal.category}</p>
-                  </span>
-                  <span className="row-note">{signal.score}</span>
-                </a>
-              ))}
+              <div className="insights-ranked">
+                {topSignals.slice(1).map((signal, index) => (
+                  <a className="ranked-row" href={signal.url} key={signal.id}>
+                    <span className="ranked-num">{index + 2}</span>
+                    <div className="ranked-info">
+                      <span className="ranked-title">{signal.title}</span>
+                      <span className="ranked-cat">{signal.category}</span>
+                    </div>
+                    <span className="ranked-score">{signal.score}</span>
+                  </a>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="insights-empty">
+              <p>No signals loaded yet</p>
+              <span>Run the GitHub pipeline to fetch signals</span>
+            </div>
+          )}
         </section>
       </section>
     </main>
