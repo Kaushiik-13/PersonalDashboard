@@ -19,6 +19,13 @@ export type Signal = {
   is_saved?: boolean;
   is_hidden?: boolean;
   last_seen_at?: string;
+  previous_score?: number | null;
+  previous_stars?: number | null;
+  previous_rank?: number | null;
+  first_seen_at?: string | null;
+  rank_change?: number;
+  star_delta?: number;
+  score_delta?: number;
 };
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -78,6 +85,29 @@ export async function getPipelineStatus() {
   }
 
   return data.value as Record<string, unknown>;
+}
+
+export async function getTrendingSignals(limit = 10) {
+  if (!supabase) {
+    return [];
+  }
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from("signals")
+    .select("*")
+    .eq("is_hidden", false)
+    .or(`rank_change.neq.0,first_seen_at.gte.${sevenDaysAgo}`)
+    .order("rank_change", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Unable to read trending signals", error);
+    return [];
+  }
+
+  return (data as Signal[]) ?? [];
 }
 
 async function getFallbackSignals(limit = 24) {

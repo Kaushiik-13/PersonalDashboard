@@ -18,7 +18,14 @@ create table if not exists public.signals (
   created_at timestamptz not null default now(),
   is_saved boolean not null default false,
   is_hidden boolean not null default false,
-  last_seen_at timestamptz not null default now()
+  last_seen_at timestamptz not null default now(),
+  previous_score integer,
+  previous_stars integer,
+  previous_rank integer,
+  first_seen_at timestamptz,
+  rank_change integer not null default 0,
+  star_delta integer not null default 0,
+  score_delta integer not null default 0
 );
 
 drop index if exists signals_provider_external_id_idx;
@@ -31,6 +38,8 @@ create index if not exists signals_published_at_idx on public.signals (published
 create index if not exists signals_category_idx on public.signals (category);
 create index if not exists signals_last_seen_at_idx on public.signals (last_seen_at desc);
 create index if not exists signals_is_saved_idx on public.signals (is_saved);
+create index if not exists signals_rank_change_idx on public.signals (rank_change desc);
+create index if not exists signals_first_seen_at_idx on public.signals (first_seen_at desc);
 
 create table if not exists public.pipeline_status (
   key text primary key,

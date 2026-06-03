@@ -14,12 +14,23 @@ import {
 } from "lucide-react";
 import type { Signal } from "@/lib/supabase";
 
-type SortOption = "score" | "stars" | "updated";
+type SortOption = "score" | "stars" | "updated" | "trending";
 type FilterOption = "all" | "AI Tools" | "Models" | "Infrastructure" | "Design" | "Dev Tools";
 
 interface SignalsClientProps {
   initialSignals: Signal[];
   pipelineStatus: Record<string, unknown> | null;
+}
+
+function isWithin24h(dateStr: string | null | undefined) {
+  if (!dateStr) return false;
+  return Date.now() - new Date(dateStr).getTime() < 24 * 60 * 60 * 1000;
+}
+
+function formatCompact(value: number): string {
+  if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(value) >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return String(value);
 }
 
 export function SignalsClient({ initialSignals, pipelineStatus }: SignalsClientProps) {
@@ -90,16 +101,19 @@ export function SignalsClient({ initialSignals, pipelineStatus }: SignalsClientP
       );
     })
     .sort((a, b) => {
+      if (sortBy === "trending") {
+        const aIsNew = isWithin24h(a.first_seen_at);
+        const bIsNew = isWithin24h(b.first_seen_at);
+        if (aIsNew && !bIsNew) return -1;
+        if (!aIsNew && bIsNew) return 1;
+        return Math.abs(b.rank_change ?? 0) - Math.abs(a.rank_change ?? 0);
+      }
       if (sortBy === "score") return b.score - a.score;
       if (sortBy === "stars") return (b.stars || 0) - (a.stars || 0);
       return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
     });
 
   const categories: FilterOption[] = ["all", "AI Tools", "Models", "Infrastructure", "Design", "Dev Tools"];
-
-  const statusText = pipelineStatus
-    ? formatStatusText(pipelineStatus)
-    : null;
 
   return (
     <>
@@ -152,6 +166,7 @@ export function SignalsClient({ initialSignals, pipelineStatus }: SignalsClientP
           </div>
           <div className="filter-pills">
             {[
+              { key: "trending", label: "Trending" },
               { key: "score", label: "Score" },
               { key: "stars", label: "Stars" },
               { key: "updated", label: "Updated" },
@@ -190,6 +205,15 @@ export function SignalsClient({ initialSignals, pipelineStatus }: SignalsClientP
               <div className="signal-header">
                 <div className="signal-meta">
                   <span className="pill category">{signal.category}</span>
+                  {isWithin24h(signal.first_seen_at) && (
+                    <span className="pill badge-new">NEW</span>
+                  )}
+                  {(signal.rank_change ?? 0) > 0 && (
+                    <span className="pill badge-up">↑ {signal.rank_change}</span>
+                  )}
+                  {(signal.rank_change ?? 0) < 0 && (
+                    <span className="pill badge-down">↓ {Math.abs(signal.rank_change ?? 0)}</span>
+                  )}
                   <span className="pill source">{signal.source}</span>
                 </div>
                 <div className="signal-actions">
@@ -234,6 +258,11 @@ export function SignalsClient({ initialSignals, pipelineStatus }: SignalsClientP
                     <Star size={14} />
                     {signal.stars?.toLocaleString() || 0}
                   </span>
+                  {(signal.star_delta ?? 0) !== 0 && (
+                    <span className={`stat delta ${(signal.star_delta ?? 0) > 0 ? "positive" : "negative"}`}>
+                      {(signal.star_delta ?? 0) > 0 ? "+" : ""}{formatCompact(signal.star_delta ?? 0)}
+                    </span>
+                  )}
                   <span className="stat score">
                     Score: <strong>{signal.score}</strong>
                   </span>
@@ -251,34 +280,4 @@ export function SignalsClient({ initialSignals, pipelineStatus }: SignalsClientP
       )}
     </>
   );
-}
-
-function formatStatusText(status: Record<string, unknown>): string {
-  const parts: string[] = [];
-
-  if (status.lastRefreshAt) {
-    const ago = timeAgo(new Date(status.lastRefreshAt as string));
-    parts.push(`Last refreshed ${ago}`);
-  }
-
-  if (typeof status.signalsSaved === "number") {
-    parts.push(`${status.signalsSaved} saved`);
-  }
-
-  if (typeof status.signalsDeleted === "number" && status.signalsDeleted > 0) {
-    parts.push(`${status.signalsDeleted} cleaned`);
-  }
-
-  return parts.join(" · ");
-}
-
-function timeAgo(date: Date): string {
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
 }

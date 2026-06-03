@@ -1,9 +1,20 @@
 import { Code2, ExternalLink, Star, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { getSignals } from "@/lib/supabase";
+import { getSignals, getTrendingSignals } from "@/lib/supabase";
 import { Logo } from "@/components/logo";
 
 export const dynamic = "force-dynamic";
+
+function isWithin24h(dateStr: string | null | undefined) {
+  if (!dateStr) return false;
+  return Date.now() - new Date(dateStr).getTime() < 24 * 60 * 60 * 1000;
+}
+
+function formatCompact(value: number): string {
+  if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(value) >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return String(value);
+}
 
 const formatNumber = (value?: number) => {
   if (!value) return "0";
@@ -18,10 +29,41 @@ const formatTime = (date: string) =>
     minute: "2-digit",
   }).format(new Date(date));
 
+function generateMovementReason(signal: {
+  first_seen_at?: string | null;
+  rank_change?: number;
+  star_delta?: number;
+  score_delta?: number;
+}): string {
+  if (isWithin24h(signal.first_seen_at)) {
+    return "First time in top signals";
+  }
+  const parts: string[] = [];
+  if ((signal.rank_change ?? 0) > 5) parts.push(`Jumped ${signal.rank_change} spots`);
+  if ((signal.star_delta ?? 0) > 500) parts.push(`+${formatCompact(signal.star_delta ?? 0)} stars`);
+  if ((signal.score_delta ?? 0) > 10) parts.push(`Score +${signal.score_delta}`);
+  return parts.join(" · ") || "Rank changed";
+}
+
 export default async function Home() {
-  const signals = await getSignals();
+  const [signals, trending] = await Promise.all([
+    getSignals(),
+    getTrendingSignals(5),
+  ]);
+
   const topSignals = signals.slice(0, 5);
   const topSignal = signals[0];
+
+  const movedSignals = trending
+    .filter((s) => (s.rank_change ?? 0) !== 0 || isWithin24h(s.first_seen_at))
+    .sort((a, b) => {
+      const aIsNew = isWithin24h(a.first_seen_at);
+      const bIsNew = isWithin24h(b.first_seen_at);
+      if (aIsNew && !bIsNew) return -1;
+      if (!aIsNew && bIsNew) return 1;
+      return Math.abs(b.rank_change ?? 0) - Math.abs(a.rank_change ?? 0);
+    })
+    .slice(0, 5);
 
   return (
     <main className="shell">
@@ -115,6 +157,31 @@ export default async function Home() {
             </div>
           )}
         </section>
+
+        {movedSignals.length > 0 && (
+          <section className="moved-block">
+            <h3 className="moved-title">What moved today</h3>
+            <div className="moved-list">
+              {movedSignals.map((signal) => (
+                <a key={signal.id} href={signal.url} className="moved-row" rel="noreferrer" target="_blank">
+                  <div className="moved-indicator">
+                    {isWithin24h(signal.first_seen_at) ? (
+                      <span className="moved-badge-new">NEW</span>
+                    ) : (signal.rank_change ?? 0) > 0 ? (
+                      <span className="moved-badge-up">↑{signal.rank_change}</span>
+                    ) : (
+                      <span className="moved-badge-down">↓{Math.abs(signal.rank_change ?? 0)}</span>
+                    )}
+                  </div>
+                  <div className="moved-info">
+                    <span className="moved-name">{signal.title}</span>
+                    <span className="moved-reason">{generateMovementReason(signal)}</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
       </section>
     </main>
   );
