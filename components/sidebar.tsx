@@ -14,15 +14,6 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <div className="brand">
-        <div className="brand-mark">S</div>
-        <div>
-          <h1 className="brand-title">Signal Desk</h1>
-          <p className="brand-subtitle">Personal dashboard</p>
-        </div>
-      </div>
-
-      <p className="nav-label">Views</p>
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = pathname === item.href;

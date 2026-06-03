@@ -1,6 +1,7 @@
 import { Code2, ExternalLink, Star, TrendingUp } from "lucide-react";
+import Link from "next/link";
 import { getSignals } from "@/lib/supabase";
-import { Sidebar } from "@/components/sidebar";
+import { Logo } from "@/components/logo";
 
 export const dynamic = "force-dynamic";
 
@@ -24,14 +25,15 @@ export default async function Home() {
 
   return (
     <main className="shell">
-      <Sidebar />
-
+      <Logo />
       <section className="main">
+
         <div className="topbar">
           <div>
             <h2 className="greeting">
               Hi Kaushiik <span className="blink-dot" />
             </h2>
+            <p className="status-text">All systems operational</p>
           </div>
         </div>
 
@@ -41,12 +43,12 @@ export default async function Home() {
               <div className="insights-icon">
                 <Code2 size={16} />
               </div>
-              <div>
-                <h3 className="insights-title">GitHub Repo Insights</h3>
-                <p className="insights-subtitle">
-                  {signals.length} signal{signals.length !== 1 ? "s" : ""} tracked
-                </p>
-              </div>
+              <Link href="/dev-signals" className="insights-title-link">
+                <h3 className="insights-title">
+                  GitHub Repo Insights
+                  <ExternalLink size={14} className="insights-external" />
+                </h3>
+              </Link>
             </div>
             <div className="insights-header-right">
               <span className="insights-badge">
@@ -57,6 +59,7 @@ export default async function Home() {
           </div>
 
           <div className="insights-pills">
+            <span className="insights-pills-label">Filters</span>
             <span className="insight-pill active">Top</span>
             <span className="insight-pill">{topSignal?.category || "AI Tools"}</span>
             <span className="insight-pill">GitHub Search</span>

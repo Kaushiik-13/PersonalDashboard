@@ -109,9 +109,6 @@ export function SignalsClient({ initialSignals, pipelineStatus }: SignalsClientP
           <p className="page-subtitle">
             {signals.length} repositories tracked from GitHub
           </p>
-          {statusText && (
-            <p className="page-status">{statusText}</p>
-          )}
         </div>
         <button className="btn-primary" onClick={handleRefresh} disabled={refreshing}>
           <TrendingUp size={16} />

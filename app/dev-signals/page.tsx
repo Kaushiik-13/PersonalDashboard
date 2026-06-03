@@ -1,6 +1,6 @@
-import { Sidebar } from "@/components/sidebar";
 import { getSignals, getPipelineStatus } from "@/lib/supabase";
 import { SignalsClient } from "./signals-client";
+import { Logo } from "@/components/logo";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +12,7 @@ export default async function DevSignalsPage() {
 
   return (
     <main className="shell">
-      <Sidebar />
-
+      <Logo />
       <section className="main">
         <div className="page-container">
           <SignalsClient initialSignals={signals} pipelineStatus={status} />
