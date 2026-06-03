@@ -1,4 +1,4 @@
-import { Code2, ExternalLink } from "lucide-react";
+import { Code2, ExternalLink, Star, TrendingUp } from "lucide-react";
 import { getSignals } from "@/lib/supabase";
 import { Sidebar } from "@/components/sidebar";
 
@@ -37,13 +37,23 @@ export default async function Home() {
 
         <section className="insights-block">
           <div className="insights-header">
-            <h3 className="insights-title">
-              <Code2 size={16} />
-              GitHub Repo Insights
-            </h3>
-            <span className="insights-count">
-              {signals.length} signal{signals.length !== 1 ? "s" : ""} loaded
-            </span>
+            <div className="insights-header-left">
+              <div className="insights-icon">
+                <Code2 size={16} />
+              </div>
+              <div>
+                <h3 className="insights-title">GitHub Repo Insights</h3>
+                <p className="insights-subtitle">
+                  {signals.length} signal{signals.length !== 1 ? "s" : ""} tracked
+                </p>
+              </div>
+            </div>
+            <div className="insights-header-right">
+              <span className="insights-badge">
+                <TrendingUp size={12} />
+                Live
+              </span>
+            </div>
           </div>
 
           <div className="insights-pills">
@@ -57,14 +67,22 @@ export default async function Home() {
               <div className="insights-featured">
                 <a href={topSignal.url} rel="noreferrer" target="_blank" className="featured-link">
                   <h4 className="featured-title">
-                    {topSignal.title} <ExternalLink size={13} />
+                    {topSignal.title}
+                    <ExternalLink size={14} className="external-icon" />
                   </h4>
                 </a>
                 <p className="featured-summary">{topSignal.summary}</p>
                 <div className="featured-footer">
-                  <span>{formatTime(topSignal.published_at)}</span>
-                  <span>{formatNumber(topSignal.stars)} stars</span>
-                  <span>score {topSignal.score}</span>
+                  <span className="footer-item">{formatTime(topSignal.published_at)}</span>
+                  <span className="footer-divider" />
+                  <span className="footer-item">
+                    <Star size={13} />
+                    {formatNumber(topSignal.stars)}
+                  </span>
+                  <span className="footer-divider" />
+                  <span className="footer-item footer-score">
+                    Score {topSignal.score}
+                  </span>
                 </div>
               </div>
 
@@ -76,7 +94,13 @@ export default async function Home() {
                       <span className="ranked-title">{signal.title}</span>
                       <span className="ranked-cat">{signal.category}</span>
                     </div>
-                    <span className="ranked-score">{signal.score}</span>
+                    <div className="ranked-meta">
+                      <span className="ranked-stars">
+                        <Star size={11} />
+                        {formatNumber(signal.stars)}
+                      </span>
+                      <span className="ranked-score">{signal.score}</span>
+                    </div>
                   </a>
                 ))}
               </div>
