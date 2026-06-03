@@ -19,7 +19,7 @@ const formatTime = (date: string) =>
 
 export default async function Home() {
   const signals = await getSignals();
-  const topSignals = signals.slice(0, 3);
+  const topSignals = signals.slice(0, 5);
   const topSignal = signals[0];
 
   return (
@@ -38,7 +38,7 @@ export default async function Home() {
           <div className="section-header">
             <h3 className="section-title">
               <Code2 size={17} />
-              Dev Signals Preview
+              GitHub Repo Insights
             </h3>
             <span className="section-meta">
               {signals.length} signal{signals.length !== 1 ? "s" : ""} loaded
