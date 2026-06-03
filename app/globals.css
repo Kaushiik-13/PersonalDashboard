@@ -420,6 +420,12 @@ input {
   font-size: 14px;
 }
 
+.page-status {
+  margin: 4px 0 0;
+  color: #71717a;
+  font-size: 12px;
+}
+
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -609,6 +615,11 @@ input {
 
 .icon-btn.hidden {
   opacity: 0.4;
+}
+
+.icon-btn.mutating {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .signal-title {

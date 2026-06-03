@@ -34,6 +34,7 @@ const watchTerms = [
   "ai",
   "llm",
   "agents",
+  "ai-agent",
   "mcp",
   "claude",
   "developer-tools",
@@ -41,6 +42,15 @@ const watchTerms = [
   "open-source-llm",
   "design-system",
   "typescript",
+  "rag",
+  "vector-database",
+  "embeddings",
+  "prompt-engineering",
+  "inference",
+  "fine-tuning",
+  "multimodal",
+  "local-llm",
+  "ai-coding",
 ];
 
 function daysAgo(days: number) {
@@ -56,15 +66,82 @@ function buildSearchQuery() {
 function getCategory(repo: GitHubRepository): Signal["category"] {
   const text = `${repo.full_name} ${repo.description ?? ""} ${(repo.topics ?? []).join(" ")}`.toLowerCase();
 
-  if (text.includes("claude") || text.includes("llm") || text.includes("agent")) {
+  // AI Tools first — catch agent/assistant/prompt tools before infrastructure keywords
+  if (
+    text.includes("genkit") ||
+    text.includes("weknora") ||
+    text.includes("agent") ||
+    text.includes("assistant") ||
+    text.includes("chatbot") ||
+    text.includes("copilot") ||
+    text.includes("prompt") ||
+    text.includes("claude") ||
+    text.includes("mcp") ||
+    text.includes("workflow")
+  ) {
     return "AI Tools";
   }
 
-  if (text.includes("model") || text.includes("ollama") || text.includes("inference")) {
+  // Models — fine-tuning, training, model weights
+  if (
+    text.includes("weights") ||
+    text.includes("lora") ||
+    text.includes("qlora") ||
+    text.includes("fine-tun") ||
+    text.includes("peft") ||
+    text.includes("unsloth") ||
+    text.includes("axolotl") ||
+    text.includes("modelscope") ||
+    text.includes("ms-swift") ||
+    text.includes("open models") ||
+    text.includes("training") ||
+    text.includes("sft") ||
+    text.includes("dpo") ||
+    text.includes("grpo")
+  ) {
     return "Models";
   }
 
-  if (text.includes("design") || text.includes("ui") || text.includes("figma")) {
+  // Infrastructure — serving engines, vector DBs, data platforms
+  if (
+    text.includes("inference") ||
+    text.includes("serving") ||
+    text.includes("vllm") ||
+    text.includes("sglang") ||
+    text.includes("tgi") ||
+    text.includes("tensorrt") ||
+    text.includes("llama.cpp") ||
+    text.includes("vector database") ||
+    text.includes("vector search") ||
+    text.includes("embedding store") ||
+    text.includes("embedding database") ||
+    text.includes("milvus") ||
+    text.includes("qdrant") ||
+    text.includes("weaviate") ||
+    text.includes("chroma") ||
+    text.includes("pinecone") ||
+    text.includes("lakehouse") ||
+    text.includes("data engine") ||
+    text.includes("data warehouse") ||
+    text.includes("kv cache") ||
+    text.includes("compute engine") ||
+    text.includes("distributed runtime") ||
+    text.includes("openllm") ||
+    text.includes("bentoml") ||
+    text.includes("databend") ||
+    text.includes("xinference") ||
+    text.includes("lmcache") ||
+    text.includes("ray-project") ||
+    text.includes("ray ") ||
+    text.includes(" lancedb") ||
+    text.includes("lance-format") ||
+    text.includes("openvino") ||
+    text.includes("semble")
+  ) {
+    return "Infrastructure";
+  }
+
+  if (text.includes("design") || text.includes("ui") || text.includes("figma") || text.includes("component")) {
     return "Design";
   }
 
@@ -74,12 +151,12 @@ function getCategory(repo: GitHubRepository): Signal["category"] {
 function getScore(repo: GitHubRepository) {
   const updatedHoursAgo =
     (Date.now() - new Date(repo.pushed_at).getTime()) / (1000 * 60 * 60);
-  const freshness = Math.max(0, 35 - Math.floor(updatedHoursAgo / 12));
-  const popularity = Math.min(35, Math.floor(Math.log10(repo.stargazers_count + 1) * 10));
-  const activity = Math.min(20, repo.forks_count + repo.open_issues_count);
-  const topicBoost = Math.min(10, (repo.topics ?? []).length * 2);
+  const freshness = Math.max(0, 15 - Math.floor(updatedHoursAgo / 72));
+  const popularity = Math.min(45, Math.floor(Math.log10(repo.stargazers_count + 1) * 9));
+  const activity = Math.min(15, Math.floor(Math.log10(repo.forks_count + repo.open_issues_count + 1) * 6));
+  const topicMatch = Math.min(10, watchTerms.filter((t) => repo.topics?.includes(t)).length * 2);
 
-  return Math.min(100, freshness + popularity + activity + topicBoost);
+  return Math.min(100, freshness + popularity + activity + topicMatch);
 }
 
 function summarizeRepo(repo: GitHubRepository) {
@@ -116,9 +193,9 @@ function mapRepoToSignal(repo: GitHubRepository): Signal {
   };
 }
 
-export async function fetchGitHubSignals(limit = 12): Promise<GitHubPipelineResult> {
+export async function fetchGitHubSignals(limit = 24): Promise<GitHubPipelineResult> {
   const baseQuery = buildSearchQuery();
-  const searches = watchTerms.slice(0, 8).map(async (term) => {
+  const searches = watchTerms.map(async (term) => {
     const params = new URLSearchParams({
       q: `topic:${term} ${baseQuery}`,
       sort: "updated",
@@ -158,6 +235,6 @@ export async function fetchGitHubSignals(limit = 12): Promise<GitHubPipelineResu
   return {
     signals,
     fetchedAt: new Date().toISOString(),
-    query: `${watchTerms.slice(0, 8).join(", ")} | ${baseQuery}`,
+    query: `${watchTerms.join(", ")} | ${baseQuery}`,
   };
 }

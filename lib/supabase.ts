@@ -7,7 +7,7 @@ export type Signal = {
   provider?: string;
   title: string;
   source: string;
-  category: "GitHub" | "AI Tools" | "Models" | "Design" | "Dev Tools";
+  category: "AI Tools" | "Models" | "Infrastructure" | "Design" | "Dev Tools";
   url: string;
   summary: string;
   why_it_matters: string;
@@ -16,6 +16,9 @@ export type Signal = {
   score: number;
   tags: string[];
   published_at: string;
+  is_saved?: boolean;
+  is_hidden?: boolean;
+  last_seen_at?: string;
 };
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -27,32 +30,59 @@ export const supabase = hasSupabaseConfig
   ? createClient(supabaseUrl as string, supabasePublishableKey as string)
   : null;
 
-export async function getSignals() {
+export async function getSignals(limit = 24, includeHidden = false) {
   if (!supabase) {
-    return getFallbackSignals();
+    return getFallbackSignals(limit);
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("signals")
     .select("*")
-    .order("score", { ascending: false })
-    .limit(24);
+    .order("score", { ascending: false });
+
+  if (!includeHidden) {
+    query = query.eq("is_hidden", false);
+  }
+
+  if (limit) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Unable to read signals from Supabase", error);
-    return getFallbackSignals();
+    return getFallbackSignals(limit);
   }
 
   if (!data?.length) {
-    return getFallbackSignals();
+    return getFallbackSignals(limit);
   }
 
   return data as Signal[];
 }
 
-async function getFallbackSignals() {
+export async function getPipelineStatus() {
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("pipeline_status")
+    .select("value")
+    .eq("key", "github_refresh")
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data.value as Record<string, unknown>;
+}
+
+async function getFallbackSignals(limit = 24) {
   try {
-    const result = await fetchGitHubSignals(6);
+    const result = await fetchGitHubSignals(limit);
     return result.signals;
   } catch (error) {
     console.error("Unable to fetch GitHub fallback signals", error);
