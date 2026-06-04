@@ -1,6 +1,6 @@
-import { Code2, ExternalLink, Star, TrendingUp } from "lucide-react";
+import { BookOpen, Code2, ExternalLink, Star, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { getSignals, getTrendingSignals } from "@/lib/supabase";
+import { getBlogSignals, getSignals, getTrendingSignals } from "@/lib/supabase";
 import { Logo } from "@/components/logo";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +29,15 @@ const formatTime = (date: string) =>
     minute: "2-digit",
   }).format(new Date(date));
 
+function timeAgo(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ago`;
+}
+
 function generateMovementReason(signal: {
   first_seen_at?: string | null;
   rank_change?: number;
@@ -46,9 +55,10 @@ function generateMovementReason(signal: {
 }
 
 export default async function Home() {
-  const [signals, trending] = await Promise.all([
+  const [signals, trending, blogSignals] = await Promise.all([
     getSignals(),
     getTrendingSignals(5),
+    getBlogSignals(),
   ]);
 
   const topSignals = signals.slice(0, 5);
@@ -64,6 +74,8 @@ export default async function Home() {
       return Math.abs(b.rank_change ?? 0) - Math.abs(a.rank_change ?? 0);
     })
     .slice(0, 5);
+
+  const topBlogSignals = blogSignals.slice(0, 7);
 
   return (
     <main className="shell">
@@ -157,6 +169,38 @@ export default async function Home() {
             </div>
           )}
         </section>
+
+        {topBlogSignals.length > 0 && (
+          <section className="insights-block">
+            <div className="insights-header">
+              <div className="insights-header-left">
+                <div className="insights-icon">
+                  <BookOpen size={16} />
+                </div>
+                <Link href="/blogs" className="insights-title-link">
+                  <h3 className="insights-title">
+                    Tech Blog Insights
+                    <ExternalLink size={14} className="insights-external" />
+                  </h3>
+                </Link>
+              </div>
+              <span className="insights-badge">Live</span>
+            </div>
+
+            <div className="insights-list">
+              {topBlogSignals.map((signal) => (
+                <a key={signal.id} href={signal.url} className="insights-list-row" rel="noreferrer" target="_blank">
+                  <div className="insights-list-info">
+                    <span className="insights-list-title">{signal.title}</span>
+                    <span className="insights-list-meta">
+                      {signal.source} · {timeAgo(new Date(signal.published_at))}
+                    </span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
 
         {movedSignals.length > 0 && (
           <section className="moved-block">

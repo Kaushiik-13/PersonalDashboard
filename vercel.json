@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/github/refresh",
+      "path": "/api/refresh",
       "schedule": "0 6 * * *"
     }
   ]

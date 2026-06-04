@@ -7,7 +7,7 @@ export type Signal = {
   provider?: string;
   title: string;
   source: string;
-  category: "AI Tools" | "Models" | "Infrastructure" | "Design" | "Dev Tools";
+  category: "AI Tools" | "Models" | "Infrastructure" | "Design" | "Dev Tools" | "Tech Blogs";
   url: string;
   summary: string;
   why_it_matters: string;
@@ -108,6 +108,49 @@ export async function getTrendingSignals(limit = 10) {
   }
 
   return (data as Signal[]) ?? [];
+}
+
+export async function getBlogSignals(includeHidden = false) {
+  if (!supabase) {
+    return [];
+  }
+
+  let query = supabase
+    .from("signals")
+    .select("*")
+    .eq("provider", "blog")
+    .order("published_at", { ascending: false });
+
+  if (!includeHidden) {
+    query = query.eq("is_hidden", false);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Unable to read blog signals", error);
+    return [];
+  }
+
+  return (data as Signal[]) ?? [];
+}
+
+export async function getBlogPipelineStatus() {
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("pipeline_status")
+    .select("value")
+    .eq("key", "blog_refresh")
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data.value as Record<string, unknown>;
 }
 
 async function getFallbackSignals(limit = 24) {
