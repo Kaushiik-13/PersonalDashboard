@@ -227,7 +227,7 @@ export async function fetchRssFeed(source: BlogSource): Promise<BlogPost[]> {
           sourceCategory: source.category,
         };
       })
-      .filter((post: BlogPost) => post.url && isWithin24h(post.publishedAt));
+      .filter((post: BlogPost) => post.url);
   });
 }
 
@@ -279,7 +279,7 @@ export async function scrapeBlogPage(source: BlogSource): Promise<BlogPost[]> {
       });
     });
 
-    return posts.filter((post) => isWithin24h(post.publishedAt));
+    return posts;
   });
 }
 
