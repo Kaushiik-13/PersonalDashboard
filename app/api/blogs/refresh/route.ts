@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { fetchAllBlogPosts, mapPostToSignal } from "@/lib/blogs";
 import { hasSupabaseAdminConfig, supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -38,9 +39,15 @@ export async function POST() {
 
     const { error: upsertError } = await supabaseAdmin
       .from("signals")
-      .upsert(rows, { onConflict: "provider,external_id" });
+      .upsert(rows, { onConflict: "signals_provider_external_id_unique" });
 
-    if (upsertError) throw upsertError;
+    if (upsertError) {
+      console.error("Blog upsert failed:", upsertError);
+      return NextResponse.json(
+        { error: upsertError.message, persisted: false },
+        { status: 500 }
+      );
+    }
 
     const { count: deletedCount } = await supabaseAdmin
       .from("signals")
@@ -59,6 +66,9 @@ export async function POST() {
     await supabaseAdmin
       .from("pipeline_status")
       .upsert({ key: "blog_refresh", value: status, updated_at: now });
+
+    revalidatePath("/blogs");
+    revalidatePath("/");
 
     return NextResponse.json({
       signals,
