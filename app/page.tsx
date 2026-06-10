@@ -1,7 +1,9 @@
-import { BookOpen, Code2, ExternalLink, Star, TrendingUp } from "lucide-react";
+import { Bookmark, Code2, ExternalLink, Plus, Star, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { getBlogSignals, getSignals, getTrendingSignals } from "@/lib/supabase";
+import { getRecentBookmarks, getSignals, getTrendingSignals } from "@/lib/supabase";
 import { Logo } from "@/components/logo";
+import { getSourceIcon, getSourceBannerColor, isSourceTypeX } from "@/lib/bookmarks";
+import { HomeBookmarksClient } from "./home-bookmarks-client";
 
 export const dynamic = "force-dynamic";
 
@@ -29,15 +31,6 @@ const formatTime = (date: string) =>
     minute: "2-digit",
   }).format(new Date(date));
 
-function timeAgo(date: Date): string {
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours}h ago`;
-}
-
 function generateMovementReason(signal: {
   first_seen_at?: string | null;
   rank_change?: number;
@@ -55,10 +48,10 @@ function generateMovementReason(signal: {
 }
 
 export default async function Home() {
-  const [signals, trending, blogSignals] = await Promise.all([
+  const [signals, trending, recentBookmarks] = await Promise.all([
     getSignals(),
     getTrendingSignals(5),
-    getBlogSignals(),
+    getRecentBookmarks(5),
   ]);
 
   const topSignals = signals.slice(0, 5);
@@ -75,8 +68,6 @@ export default async function Home() {
     })
     .slice(0, 5);
 
-  const topBlogSignals = blogSignals.slice(0, 7);
-
   return (
     <main className="shell">
       <Logo />
@@ -91,116 +82,88 @@ export default async function Home() {
           </div>
         </div>
 
-        <section className="insights-block">
-          <div className="insights-header">
-            <div className="insights-header-left">
-              <div className="insights-icon">
-                <Code2 size={16} />
-              </div>
-              <Link href="/dev-signals" className="insights-title-link">
-                <h3 className="insights-title">
-                  GitHub Repo Insights
-                  <ExternalLink size={14} className="insights-external" />
-                </h3>
-              </Link>
-            </div>
-            <div className="insights-header-right">
-              <span className="insights-badge">
-                <TrendingUp size={12} />
-                Live
-              </span>
-            </div>
-          </div>
-
-          <div className="insights-pills">
-            <span className="insights-pills-label">Filters</span>
-            <span className="insight-pill active">Top</span>
-            <span className="insight-pill">{topSignal?.category || "AI Tools"}</span>
-            <span className="insight-pill">GitHub Search</span>
-          </div>
-
-          {topSignal ? (
-            <div className="insights-body">
-              <div className="insights-featured">
-                <a href={topSignal.url} rel="noreferrer" target="_blank" className="featured-link">
-                  <h4 className="featured-title">
-                    {topSignal.title}
-                    <ExternalLink size={14} className="external-icon" />
-                  </h4>
-                </a>
-                <p className="featured-summary">{topSignal.summary}</p>
-                <div className="featured-footer">
-                  <span className="footer-item">{formatTime(topSignal.published_at)}</span>
-                  <span className="footer-divider" />
-                  <span className="footer-item">
-                    <Star size={13} />
-                    {formatNumber(topSignal.stars)}
-                  </span>
-                  <span className="footer-divider" />
-                  <span className="footer-item footer-score">
-                    Score {topSignal.score}
-                  </span>
-                </div>
-              </div>
-
-              <div className="insights-ranked">
-                {topSignals.slice(1).map((signal, index) => (
-                  <a className="ranked-row" href={signal.url} key={signal.id}>
-                    <span className="ranked-num">{index + 2}</span>
-                    <div className="ranked-info">
-                      <span className="ranked-title">{signal.title}</span>
-                      <span className="ranked-cat">{signal.category}</span>
-                    </div>
-                    <div className="ranked-meta">
-                      <span className="ranked-stars">
-                        <Star size={11} />
-                        {formatNumber(signal.stars)}
-                      </span>
-                      <span className="ranked-score">{signal.score}</span>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="insights-empty">
-              <p>No signals loaded yet</p>
-              <span>Run the GitHub pipeline to fetch signals</span>
-            </div>
-          )}
-        </section>
-
-        {topBlogSignals.length > 0 && (
-          <section className="insights-block">
+        <div className="bento-grid">
+          <section className="insights-block bento-main">
             <div className="insights-header">
               <div className="insights-header-left">
                 <div className="insights-icon">
-                  <BookOpen size={16} />
+                  <Code2 size={16} />
                 </div>
-                <Link href="/blogs" className="insights-title-link">
+                <Link href="/dev-signals" className="insights-title-link">
                   <h3 className="insights-title">
-                    Tech Blog Insights
+                    GitHub Repo Insights
                     <ExternalLink size={14} className="insights-external" />
                   </h3>
                 </Link>
               </div>
-              <span className="insights-badge">Live</span>
+              <div className="insights-header-right">
+                <span className="insights-badge">
+                  <TrendingUp size={12} />
+                  Live
+                </span>
+              </div>
             </div>
 
-            <div className="insights-list">
-              {topBlogSignals.map((signal) => (
-                <a key={signal.id} href={signal.url} className="insights-list-row" rel="noreferrer" target="_blank">
-                  <div className="insights-list-info">
-                    <span className="insights-list-title">{signal.title}</span>
-                    <span className="insights-list-meta">
-                      {signal.source} · {timeAgo(new Date(signal.published_at))}
+            <div className="insights-pills">
+              <span className="insights-pills-label">Filters</span>
+              <span className="insight-pill active">Top</span>
+              <span className="insight-pill">{topSignal?.category || "AI Tools"}</span>
+              <span className="insight-pill">GitHub Search</span>
+            </div>
+
+            {topSignal ? (
+              <div className="insights-body">
+                <div className="insights-featured">
+                  <a href={topSignal.url} rel="noreferrer" target="_blank" className="featured-link">
+                    <h4 className="featured-title">
+                      {topSignal.title}
+                      <ExternalLink size={14} className="external-icon" />
+                    </h4>
+                  </a>
+                  <p className="featured-summary">{topSignal.summary}</p>
+                  <div className="featured-footer">
+                    <span className="footer-item">{formatTime(topSignal.published_at)}</span>
+                    <span className="footer-divider" />
+                    <span className="footer-item">
+                      <Star size={13} />
+                      {formatNumber(topSignal.stars)}
+                    </span>
+                    <span className="footer-divider" />
+                    <span className="footer-item footer-score">
+                      Score {topSignal.score}
                     </span>
                   </div>
-                </a>
-              ))}
-            </div>
+                </div>
+
+                <div className="insights-ranked">
+                  {topSignals.slice(1).map((signal, index) => (
+                    <a className="ranked-row" href={signal.url} key={signal.id}>
+                      <span className="ranked-num">{index + 2}</span>
+                      <div className="ranked-info">
+                        <span className="ranked-title">{signal.title}</span>
+                        <span className="ranked-cat">{signal.category}</span>
+                      </div>
+                      <div className="ranked-meta">
+                        <span className="ranked-stars">
+                          <Star size={11} />
+                          {formatNumber(signal.stars)}
+                        </span>
+                        <span className="ranked-score">{signal.score}</span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="insights-empty">
+                <p>No signals loaded yet</p>
+                <span>Run the GitHub pipeline to fetch signals</span>
+              </div>
+            )}
           </section>
-        )}
+
+          <HomeBookmarksClient bookmarks={recentBookmarks} />
+        </div>
 
         {movedSignals.length > 0 && (
           <section className="moved-block">

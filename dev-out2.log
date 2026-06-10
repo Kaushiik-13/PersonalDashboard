@@ -1,0 +1,10 @@
+   ▲ Next.js 15.5.19
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.6:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 16.1s
+ ○ Compiling /blogs ...
+ ✓ Compiled /blogs in 9.3s (659 modules)
+ GET /blogs 200 in 14172ms

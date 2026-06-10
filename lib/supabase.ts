@@ -7,7 +7,7 @@ export type Signal = {
   provider?: string;
   title: string;
   source: string;
-  category: "AI Tools" | "Models" | "Infrastructure" | "Design" | "Dev Tools" | "Tech Blogs";
+  category: "AI Tools" | "Models" | "Infrastructure" | "Design" | "Dev Tools" | "Tech Blogs" | "Bookmark";
   url: string;
   summary: string;
   why_it_matters: string;
@@ -26,6 +26,7 @@ export type Signal = {
   rank_change?: number;
   star_delta?: number;
   score_delta?: number;
+  read_status?: string;
 };
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -151,6 +152,58 @@ export async function getBlogPipelineStatus() {
   }
 
   return data.value as Record<string, unknown>;
+}
+
+export async function getBookmarkSignals(status?: string, limit = 50) {
+  if (!supabase) {
+    return [];
+  }
+
+  let query = supabase
+    .from("signals")
+    .select("*")
+    .eq("provider", "bookmark")
+    .eq("is_hidden", false)
+    .order("published_at", { ascending: false });
+
+  if (status) {
+    query = query.eq("read_status", status);
+  }
+
+  if (limit) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Unable to read bookmark signals", error);
+    return [];
+  }
+
+  return (data as Signal[]) ?? [];
+}
+
+export async function getRecentBookmarks(limit = 5) {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("signals")
+    .select("*")
+    .eq("provider", "bookmark")
+    .eq("is_hidden", false)
+    .eq("read_status", "unread")
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Unable to read recent bookmarks", error);
+    return [];
+  }
+
+  return (data as Signal[]) ?? [];
 }
 
 async function getFallbackSignals(limit = 24) {

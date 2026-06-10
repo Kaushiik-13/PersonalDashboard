@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { fetchGitHubSignals } from "@/lib/github";
 import { hasSupabaseAdminConfig, supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -106,9 +105,6 @@ export async function POST() {
     await supabaseAdmin
       .from("pipeline_status")
       .upsert({ key: "github_refresh", value: status, updated_at: now });
-
-    revalidatePath("/dev-signals");
-    revalidatePath("/");
 
     return NextResponse.json({
       ...result,

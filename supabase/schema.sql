@@ -5,7 +5,7 @@ create table if not exists public.signals (
   title text not null,
   source text not null,
   category text not null check (
-    category in ('AI Tools', 'Models', 'Infrastructure', 'Design', 'Dev Tools')
+    category in ('AI Tools', 'Models', 'Infrastructure', 'Design', 'Dev Tools', 'Tech Blogs', 'Bookmark')
   ),
   url text not null,
   summary text not null,
@@ -25,7 +25,8 @@ create table if not exists public.signals (
   first_seen_at timestamptz,
   rank_change integer not null default 0,
   star_delta integer not null default 0,
-  score_delta integer not null default 0
+  score_delta integer not null default 0,
+  read_status text not null default 'unread'
 );
 
 drop index if exists signals_provider_external_id_idx;
@@ -40,6 +41,7 @@ create index if not exists signals_last_seen_at_idx on public.signals (last_seen
 create index if not exists signals_is_saved_idx on public.signals (is_saved);
 create index if not exists signals_rank_change_idx on public.signals (rank_change desc);
 create index if not exists signals_first_seen_at_idx on public.signals (first_seen_at desc);
+create index if not exists signals_read_status_idx on public.signals (read_status);
 
 create table if not exists public.pipeline_status (
   key text primary key,
