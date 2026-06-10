@@ -2,11 +2,13 @@
 
 import { useState, useCallback } from "react";
 import {
+  Archive,
   Bookmark,
-  Check,
+  CheckCircle2,
   ExternalLink,
   Plus,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 import type { Signal } from "@/lib/supabase";
 import { getSourceLabel, getSourceIcon, getSourceBannerColor, isSourceTypeX } from "@/lib/bookmarks";
@@ -141,10 +143,19 @@ export function BookmarksClient({ initialBookmarks }: BookmarksClientProps) {
       </div>
 
       <div className="bookmark-tabs">
-        <button className={`pill ${tab === "all" ? "active" : ""}`} onClick={() => setTab("all")}>All</button>
-        <button className={`pill ${tab === "unread" ? "active" : ""}`} onClick={() => setTab("unread")}>Unread ({unreadCount})</button>
-        <button className={`pill ${tab === "read" ? "active" : ""}`} onClick={() => setTab("read")}>Read ({readCount})</button>
-        <button className={`pill ${tab === "archived" ? "active" : ""}`} onClick={() => setTab("archived")}>Archived ({archivedCount})</button>
+        <button className={`pill ${tab === "all" ? "active" : ""}`} onClick={() => setTab("all")}>All ({bookmarks.length})</button>
+        <button className={`pill ${tab === "unread" ? "active" : ""}`} onClick={() => setTab("unread")}>
+          <CheckCircle2 size={12} style={{ marginRight: 4, verticalAlign: -1 }} />
+          Unread ({unreadCount})
+        </button>
+        <button className={`pill ${tab === "read" ? "active" : ""}`} onClick={() => setTab("read")}>
+          <Bookmark size={12} style={{ marginRight: 4, verticalAlign: -1 }} />
+          Read ({readCount})
+        </button>
+        <button className={`pill ${tab === "archived" ? "active" : ""}`} onClick={() => setTab("archived")}>
+          <Archive size={12} style={{ marginRight: 4, verticalAlign: -1 }} />
+          Archived ({archivedCount})
+        </button>
       </div>
 
       {filtered.length === 0 ? (
@@ -158,9 +169,13 @@ export function BookmarksClient({ initialBookmarks }: BookmarksClientProps) {
           {filtered.map((bookmark) => {
             const st = bookmark.tags?.[0] || "generic";
             const color = getSourceBannerColor(st as any);
+            const isMutating = mutatingIds.has(bookmark.id);
+            const status = bookmark.read_status || "unread";
+
             return (
-              <div key={bookmark.id} className="bookmark-row">
+              <div key={bookmark.id} className={`bookmark-row ${isMutating ? "bookmark-row-mutating" : ""}`}>
                 <span className="bookmark-dot" style={{ background: color }} />
+                {status === "unread" && <span className="bookmark-status-dot" />}
                 <a className="bookmark-title" href={bookmark.url} target="_blank" rel="noreferrer">
                   {bookmark.title}
                 </a>
@@ -176,20 +191,30 @@ export function BookmarksClient({ initialBookmarks }: BookmarksClientProps) {
                   {timeAgo(new Date(bookmark.published_at))}
                 </span>
                 <div className="bookmark-row-actions">
-                  {bookmark.read_status === "unread" && (
-                    <button className="icon-btn" title="Mark read" onClick={() => handleStatus(bookmark.id, "read")} disabled={mutatingIds.has(bookmark.id)}>
-                      <Check size={14} />
+                  {status === "unread" && (
+                    <button className="icon-btn bookmark-action-read" title="Mark as read" onClick={() => handleStatus(bookmark.id, "read")} disabled={isMutating}>
+                      <CheckCircle2 size={14} />
                     </button>
                   )}
-                  {bookmark.read_status === "read" && (
-                    <button className="icon-btn" title="Mark unread" onClick={() => handleStatus(bookmark.id, "unread")} disabled={mutatingIds.has(bookmark.id)}>
-                      <Bookmark size={14} />
+                  {status === "read" && (
+                    <button className="icon-btn bookmark-action-unread" title="Mark as unread" onClick={() => handleStatus(bookmark.id, "unread")} disabled={isMutating}>
+                      <RotateCcw size={14} />
                     </button>
                   )}
-                  <a className="icon-btn" href={bookmark.url} target="_blank" rel="noreferrer" title="Open">
+                  {status !== "archived" && (
+                    <button className="icon-btn" title="Archive" onClick={() => handleStatus(bookmark.id, "archived")} disabled={isMutating}>
+                      <Archive size={14} />
+                    </button>
+                  )}
+                  {status === "archived" && (
+                    <button className="icon-btn" title="Unarchive" onClick={() => handleStatus(bookmark.id, "unread")} disabled={isMutating}>
+                      <RotateCcw size={14} />
+                    </button>
+                  )}
+                  <a className="icon-btn" href={bookmark.url} target="_blank" rel="noreferrer" title="Open link">
                     <ExternalLink size={14} />
                   </a>
-                  <button className="icon-btn" title="Delete" onClick={() => handleDelete(bookmark.id)} disabled={mutatingIds.has(bookmark.id)}>
+                  <button className="icon-btn bookmark-action-delete" title="Delete" onClick={() => handleDelete(bookmark.id)} disabled={isMutating}>
                     <Trash2 size={14} />
                   </button>
                 </div>

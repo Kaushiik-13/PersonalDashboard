@@ -1318,6 +1318,44 @@ input {
   opacity: 1;
 }
 
+.bookmark-row-mutating {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.bookmark-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+  margin-left: -4px;
+}
+
+.bookmark-action-read {
+  color: #22c55e !important;
+}
+
+.bookmark-action-read:hover {
+  color: #16a34a !important;
+}
+
+.bookmark-action-unread {
+  color: #71717a !important;
+}
+
+.bookmark-action-unread:hover {
+  color: #a1a1aa !important;
+}
+
+.bookmark-action-delete {
+  color: #ef4444 !important;
+}
+
+.bookmark-action-delete:hover {
+  color: #dc2626 !important;
+}
+
 /* Add Button */
 .insights-add-btn {
   display: flex;
