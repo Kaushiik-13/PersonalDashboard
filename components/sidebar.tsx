@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Github, LayoutDashboard } from "lucide-react";
+import { Bookmark, FileText, Github, LayoutDashboard } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Dev Signals", href: "/dev-signals", icon: Github },
+  { label: "Bookmarks", href: "/bookmarks", icon: Bookmark },
+  { label: "Notes", href: "/notes", icon: FileText },
 ];
 
 export function Sidebar() {

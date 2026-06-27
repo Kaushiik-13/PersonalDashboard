@@ -29,14 +29,43 @@ export type Signal = {
   read_status?: string;
 };
 
+export type NoteBlockType = "paragraph" | "heading" | "bullet" | "todo" | "quote" | "code" | "divider";
+
+export type NoteBlock = {
+  id: string;
+  type: NoteBlockType;
+  text: string;
+  checked?: boolean;
+};
+
+export type Note = {
+  id: string;
+  title: string;
+  blocks: NoteBlock[];
+  tags: string[];
+  is_pinned: boolean;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
 export const hasSupabaseConfig = Boolean(supabaseUrl && supabasePublishableKey);
 
 export const supabase = hasSupabaseConfig
   ? createClient(supabaseUrl as string, supabasePublishableKey as string)
   : null;
+
+const supabaseServer = supabaseUrl && supabaseServiceKey
+  ? createClient(supabaseUrl as string, supabaseServiceKey as string, {
+      auth: {
+        persistSession: false,
+      },
+    })
+  : supabase;
 
 export async function getSignals(limit = 24, includeHidden = false) {
   if (!supabase) {
@@ -204,6 +233,75 @@ export async function getRecentBookmarks(limit = 5) {
   }
 
   return (data as Signal[]) ?? [];
+}
+
+export async function getNotes(includeArchived = false, limit = 100) {
+  if (!supabaseServer) {
+    return [];
+  }
+
+  let query = supabaseServer
+    .from("notes")
+    .select("*")
+    .order("is_pinned", { ascending: false })
+    .order("updated_at", { ascending: false });
+
+  if (!includeArchived) {
+    query = query.eq("is_archived", false);
+  }
+
+  if (limit) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Unable to read notes", error);
+    return [];
+  }
+
+  return (data as Note[]) ?? [];
+}
+
+export async function getNote(id: string) {
+  if (!supabaseServer) {
+    return null;
+  }
+
+  const { data, error } = await supabaseServer
+    .from("notes")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error("Unable to read note", error);
+    return null;
+  }
+
+  return data as Note;
+}
+
+export async function getRecentNotes(limit = 5) {
+  if (!supabaseServer) {
+    return [];
+  }
+
+  const { data, error } = await supabaseServer
+    .from("notes")
+    .select("*")
+    .eq("is_archived", false)
+    .order("is_pinned", { ascending: false })
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Unable to read recent notes", error);
+    return [];
+  }
+
+  return (data as Note[]) ?? [];
 }
 
 async function getFallbackSignals(limit = 24) {

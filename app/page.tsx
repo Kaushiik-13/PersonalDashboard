@@ -1,9 +1,9 @@
-import { Bookmark, Briefcase, Code2, ExternalLink, Plus, Star, TrendingUp } from "lucide-react";
+import { Briefcase, Code2, ExternalLink, Star, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { getRecentBookmarks, getSignals, getTrendingSignals } from "@/lib/supabase";
+import { getRecentBookmarks, getRecentNotes, getSignals, getTrendingSignals } from "@/lib/supabase";
 import { Logo } from "@/components/logo";
-import { getSourceIcon, getSourceBannerColor, isSourceTypeX } from "@/lib/bookmarks";
 import { HomeBookmarksClient } from "./home-bookmarks-client";
+import { HomeNotesClient } from "./home-notes-client";
 
 export const dynamic = "force-dynamic";
 
@@ -48,10 +48,11 @@ function generateMovementReason(signal: {
 }
 
 export default async function Home() {
-  const [signals, trending, recentBookmarks] = await Promise.all([
+  const [signals, trending, recentBookmarks, recentNotes] = await Promise.all([
     getSignals(),
     getTrendingSignals(5),
     getRecentBookmarks(5),
+    getRecentNotes(5),
   ]);
 
   const topSignals = signals.slice(0, 5);
@@ -80,15 +81,27 @@ export default async function Home() {
             </h2>
             <p className="status-text">All systems operational</p>
           </div>
-          <a
-            href="https://kct.neopat.ai/placements/drives?status=Ongoing"
-            target="_blank"
-            rel="noreferrer"
-            className="icon-button"
-            title="Placements"
-          >
-            <Briefcase size={18} />
-          </a>
+          <div className="actions">
+            <a
+              href="https://kct.neopat.ai/placements/drives?status=Ongoing"
+              target="_blank"
+              rel="noreferrer"
+              className="icon-button"
+              title="Placements"
+            >
+              <Briefcase size={18} />
+            </a>
+            <a
+              href="https://www.workatastartup.com/conversations"
+              target="_blank"
+              rel="noreferrer"
+              className="icon-button yc-button"
+              title="YC Work at a Startup Conversations"
+            >
+              <span className="yc-logo" aria-hidden="true">Y</span>
+              <span className="sr-only">YC Work at a Startup Conversations</span>
+            </a>
+          </div>
         </div>
 
         <div className="bento-grid">
@@ -172,6 +185,7 @@ export default async function Home() {
           </section>
 
           <HomeBookmarksClient bookmarks={recentBookmarks} />
+          <HomeNotesClient notes={recentNotes} />
         </div>
 
         {movedSignals.length > 0 && (
